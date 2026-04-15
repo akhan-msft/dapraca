@@ -218,6 +218,7 @@ var commonSecrets = [
 // ── Bootstrap Service (Python) ────────────────────────────────────────────────
 module bootstrap 'modules/containerApp.bicep' = {
   name: 'bootstrap'
+  dependsOn: [identityRbac, daprComponents]
   params: {
     name: 'bootstrap'
     location: location
@@ -253,6 +254,7 @@ module bootstrap 'modules/containerApp.bicep' = {
 // ── Order Service (Java) — Dedicated D4 ──────────────────────────────────────
 module orderService 'modules/containerApp.bicep' = {
   name: 'order-service'
+  dependsOn: [identityRbac, daprComponents]
   params: {
     name: 'order-service'
     location: location
@@ -283,6 +285,7 @@ module orderService 'modules/containerApp.bicep' = {
 // ── Accounting Service (Java) — Consumption ───────────────────────────────────
 module accountingService 'modules/containerApp.bicep' = {
   name: 'accounting-service'
+  dependsOn: [identityRbac, daprComponents]
   params: {
     name: 'accounting-service'
     location: location
@@ -343,6 +346,7 @@ module accountingService 'modules/containerApp.bicep' = {
 // ── Loyalty Service (Java) — Consumption ─────────────────────────────────────
 module loyaltyService 'modules/containerApp.bicep' = {
   name: 'loyalty-service'
+  dependsOn: [identityRbac, daprComponents]
   params: {
     name: 'loyalty-service'
     location: location
@@ -379,6 +383,7 @@ module loyaltyService 'modules/containerApp.bicep' = {
 // ── Makeline Service (Java) — Dedicated D4 ───────────────────────────────────
 module makelineService 'modules/containerApp.bicep' = {
   name: 'makeline-service'
+  dependsOn: [identityRbac, daprComponents]
   params: {
     name: 'makeline-service'
     location: location
@@ -421,6 +426,7 @@ module makelineService 'modules/containerApp.bicep' = {
 // ── Receipt Service (.NET 8) — Consumption ────────────────────────────────────
 module receiptService 'modules/containerApp.bicep' = {
   name: 'receipt-service'
+  dependsOn: [identityRbac, daprComponents]
   params: {
     name: 'receipt-service'
     location: location
@@ -457,6 +463,7 @@ module receiptService 'modules/containerApp.bicep' = {
 // ── UI Service (ReactJS + Node.js BFF) — External ingress ────────────────────
 module ui 'modules/containerApp.bicep' = {
   name: 'ui'
+  dependsOn: [identityRbac, daprComponents]
   params: {
     name: 'ui'
     location: location
