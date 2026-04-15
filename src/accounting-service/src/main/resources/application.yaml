@@ -6,7 +6,7 @@ spring:
   datasource:
     # JDBC URL uses Managed Identity via DefaultAzureCredential
     # Set at runtime via env vars SQL_SERVER + SQL_DATABASE
-    url: "jdbc:sqlserver://${SQL_SERVER};databaseName=${SQL_DATABASE};authentication=ActiveDirectoryManagedIdentity;encrypt=true;trustServerCertificate=false;"
+    url: "jdbc:sqlserver://${SQL_SERVER};databaseName=${SQL_DATABASE};authentication=ActiveDirectoryManagedIdentity;msiClientId=${AZURE_CLIENT_ID};encrypt=true;trustServerCertificate=false;"
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 management:
   endpoints:
