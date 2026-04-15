@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build
 WORKDIR /src
 
 COPY ReceiptService.csproj .
-RUN dotnet restore --locked-mode
+RUN dotnet restore
 
 COPY . .
 RUN dotnet publish -c Release -o /app/publish --no-restore
