@@ -34,7 +34,7 @@ services:
     host: containerapp
 
   receipt-service:
-    project: ./src/receipt-service
+    project: ./src/receipt-service/src/ReceiptService
     language: dotnet
     host: containerapp
 
