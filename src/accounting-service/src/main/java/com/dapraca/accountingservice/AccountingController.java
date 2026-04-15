@@ -2,6 +2,7 @@ package com.dapraca.accountingservice;
 
 import com.dapraca.accountingservice.OrderModels.OrderEvent;
 import com.dapraca.accountingservice.OrderModels.OrderMetrics;
+import com.dapraca.accountingservice.OrderModels.OrderSummary;
 import io.dapr.Topic;
 import io.dapr.client.domain.CloudEvent;
 import io.opentelemetry.api.trace.Span;
@@ -93,6 +94,25 @@ public class AccountingController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(results.get(0));
+    }
+
+    @GetMapping("/orders")
+    public ResponseEntity<List<OrderSummary>> getRecentOrders(
+            @RequestParam(defaultValue = "100") int limit) {
+        List<OrderSummary> orders = jdbcTemplate.query(
+                "SELECT TOP (?) order_id, customer_name, order_total, store_id, order_date, status FROM orders ORDER BY order_date DESC",
+                (rs, rowNum) -> new OrderSummary(
+                        rs.getString("order_id"),
+                        rs.getString("customer_name"),
+                        rs.getBigDecimal("order_total"),
+                        rs.getString("store_id"),
+                        rs.getTimestamp("order_date") != null
+                                ? rs.getTimestamp("order_date").toInstant() : null,
+                        rs.getString("status")
+                ),
+                limit
+        );
+        return ResponseEntity.ok(orders);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

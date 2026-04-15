@@ -45,6 +45,13 @@ app.get('/api/accounting/metrics', async (req, res) => {
   res.json(data);
 });
 
+// Get recent order history
+app.get('/api/accounting/orders', async (req, res) => {
+  const limit = req.query.limit || 100;
+  const { data } = await dapr.get(svcUrl(ACCOUNTING_SVC, `/api/accounting/orders?limit=${limit}`));
+  res.json(data);
+});
+
 // Get makeline order queue (for dashboard)
 app.get('/api/makeline/orders', async (req, res) => {
   const { data } = await dapr.get(svcUrl(MAKELINE_SVC, '/api/makeline/orders'));

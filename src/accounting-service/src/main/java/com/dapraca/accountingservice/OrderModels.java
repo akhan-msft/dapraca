@@ -28,4 +28,16 @@ public class OrderModels {
             BigDecimal totalRevenue,
             BigDecimal avgOrderValue
     ) {}
+
+    /**
+     * Summary row for the order history list.
+     */
+    public record OrderSummary(
+            String orderId,
+            String customerName,
+            BigDecimal orderTotal,
+            String storeId,
+            Instant orderDate,
+            String status
+    ) {}
 }
