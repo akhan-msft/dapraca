@@ -25,6 +25,12 @@ param cosmosContainer string
 @description('Client ID of the user-assigned managed identity used by all services')
 param managedIdentityClientId string
 
+@description('Storage account name for receipt blob binding')
+param storageAccountName string
+
+@description('Blob container name for receipts')
+param storageContainerName string = 'receipts'
+
 resource acaEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' existing = {
   name: environmentName
 }
@@ -86,6 +92,24 @@ resource statestoreCosmosDb 'Microsoft.App/managedEnvironments/daprComponents@20
     ]
     scopes: [
       'loyalty-service'
+    ]
+  }
+}
+
+// ── Blob Storage output binding ───────────────────────────────────────────────
+resource bindingBlobStorage 'Microsoft.App/managedEnvironments/daprComponents@2024-03-01' = {
+  name: 'binding-blobstorage'
+  parent: acaEnvironment
+  properties: {
+    componentType: 'bindings.azure.blobstorage'
+    version: 'v1'
+    metadata: [
+      { name: 'accountName', value: storageAccountName }
+      { name: 'containerName', value: storageContainerName }
+      { name: 'azureClientId', value: managedIdentityClientId }
+    ]
+    scopes: [
+      'receipt-service'
     ]
   }
 }

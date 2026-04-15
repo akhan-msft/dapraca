@@ -15,9 +15,7 @@ public class MakelineModels {
             String customerName,
             BigDecimal orderTotal,
             String storeId,
-            String status,
-            /** Raw JSON string of order line items. */
-            String items
+            String status
     ) {}
 
     /**

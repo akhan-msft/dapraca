@@ -190,6 +190,8 @@ module daprComponents 'modules/daprComponents.bicep' = {
     cosmosDatabase: cosmos.outputs.databaseName
     cosmosContainer: cosmos.outputs.containerName
     managedIdentityClientId: identity.outputs.clientId
+    storageAccountName: storage.outputs.name
+    storageContainerName: storage.outputs.receiptContainerName
   }
 }
 
