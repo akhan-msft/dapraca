@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /** Inbound order request payload. */
 @Data
-public class OrderRequest {
+class OrderRequest {
 
     @NotBlank(message = "customerId is required")
     private String customerId;
