@@ -211,6 +211,7 @@ module bootstrap 'modules/containerApp.bicep' = {
     ingressType: 'none'
     daprEnabled: false
     userAssignedIdentityId: identity.outputs.identityId
+    acrLoginServer: acr.outputs.loginServer
     minReplicas: 0
     maxReplicas: 1
     env: union(commonEnv, [
@@ -246,6 +247,7 @@ module orderService 'modules/containerApp.bicep' = {
     daprEnabled: true
     daprAppId: 'order-service'
     userAssignedIdentityId: identity.outputs.identityId
+    acrLoginServer: acr.outputs.loginServer
     cpuCores: '1.0'
     memoryGi: '2Gi'
     minReplicas: 1
@@ -275,6 +277,7 @@ module accountingService 'modules/containerApp.bicep' = {
     daprEnabled: true
     daprAppId: 'accounting-service'
     userAssignedIdentityId: identity.outputs.identityId
+    acrLoginServer: acr.outputs.loginServer
     minReplicas: 0
     maxReplicas: 10
     scaleRules: [
@@ -334,6 +337,7 @@ module loyaltyService 'modules/containerApp.bicep' = {
     daprEnabled: true
     daprAppId: 'loyalty-service'
     userAssignedIdentityId: identity.outputs.identityId
+    acrLoginServer: acr.outputs.loginServer
     minReplicas: 0
     maxReplicas: 10
     scaleRules: [
@@ -369,6 +373,7 @@ module makelineService 'modules/containerApp.bicep' = {
     daprEnabled: true
     daprAppId: 'makeline-service'
     userAssignedIdentityId: identity.outputs.identityId
+    acrLoginServer: acr.outputs.loginServer
     cpuCores: '1.0'
     memoryGi: '2Gi'
     minReplicas: 1
@@ -410,6 +415,7 @@ module receiptService 'modules/containerApp.bicep' = {
     daprEnabled: true
     daprAppId: 'receipt-service'
     userAssignedIdentityId: identity.outputs.identityId
+    acrLoginServer: acr.outputs.loginServer
     minReplicas: 0
     maxReplicas: 10
     scaleRules: [
@@ -447,6 +453,7 @@ module ui 'modules/containerApp.bicep' = {
     daprAppId: 'ui'
     daprAppPort: 3000
     userAssignedIdentityId: identity.outputs.identityId
+    acrLoginServer: acr.outputs.loginServer
     minReplicas: 1
     maxReplicas: 10
     scaleRules: [

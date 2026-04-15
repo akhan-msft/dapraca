@@ -19,6 +19,9 @@ param ingressType string = 'internal'
 // Identity
 param userAssignedIdentityId string
 
+// ACR login server — always set separately so registries auth uses ACR, not placeholder image host
+param acrLoginServer string = ''
+
 // Dapr
 param daprEnabled bool = true
 param daprAppId string = name
@@ -78,10 +81,10 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         enabled: false
       }
       secrets: secrets
-      registries: [
+      registries: empty(acrLoginServer) ? [] : [
         {
           identity: userAssignedIdentityId
-          server: split(containerImage, '/')[0]  // Extract registry from image path
+          server: acrLoginServer
         }
       ]
     }
