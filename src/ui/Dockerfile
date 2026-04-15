@@ -16,8 +16,8 @@ RUN npm ci --omit=dev
 COPY server/ ./server/
 COPY --from=client-builder /client/build ./client/build
 
-RUN useradd -r -u 1000 appuser && chown -R appuser /app
-USER appuser
+RUN chown -R node /app
+USER node
 
 EXPOSE 3000
 ENV PORT=3000
