@@ -33,15 +33,18 @@ resource sbDataOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (
 }
 
 // ── Cosmos DB ─────────────────────────────────────────────────────────────────
-// Cosmos DB Built-in Data Contributor
-resource cosmosDataContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(cosmosAccountId)) {
+// Cosmos DB Built-in Data Contributor (data plane role — uses Cosmos RBAC API)
+resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' existing = if (!empty(cosmosAccountId)) {
+  name: last(split(cosmosAccountId, '/'))
+}
+
+resource cosmosDataContributor 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2024-05-15' = if (!empty(cosmosAccountId)) {
+  parent: cosmosAccount
   name: guid(identity.id, cosmosAccountId, 'CosmosDataContributor')
-  scope: resourceGroup()
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002')
+    roleDefinitionId: '${cosmosAccountId}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002'
     principalId: identity.properties.principalId
-    principalType: 'ServicePrincipal'
-    description: 'Cosmos DB Data Contributor for loyalty-service'
+    scope: cosmosAccountId
   }
 }
 

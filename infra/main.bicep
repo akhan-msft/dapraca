@@ -15,14 +15,17 @@ param location string = resourceGroup().location
 @description('Object ID of the identity that runs deployments — used as SQL Active Directory admin.')
 param deploymentPrincipalId string = ''
 
-// ── Container image tags (set by CI/CD pipeline) ─────────────────────────────
-param uiImageTag string = 'latest'
-param orderServiceImageTag string = 'latest'
-param accountingServiceImageTag string = 'latest'
-param loyaltyServiceImageTag string = 'latest'
-param makelineServiceImageTag string = 'latest'
-param receiptServiceImageTag string = 'latest'
-param bootstrapImageTag string = 'latest'
+// ── Container image tags (set by azd deploy; empty = use placeholder for initial provision) ─────
+param uiImageTag string = ''
+param orderServiceImageTag string = ''
+param accountingServiceImageTag string = ''
+param loyaltyServiceImageTag string = ''
+param makelineServiceImageTag string = ''
+param receiptServiceImageTag string = ''
+param bootstrapImageTag string = ''
+
+// Placeholder used on first provision before images are pushed to ACR
+var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
 // ── Naming helpers ────────────────────────────────────────────────────────────
 var abbrs = loadJsonContent('./abbreviations.json')
@@ -203,7 +206,7 @@ module bootstrap 'modules/containerApp.bicep' = {
     location: location
     tags: union(tags, { 'azd-service-name': 'bootstrap' })
     environmentId: acaEnv.outputs.id
-    containerImage: '${acr.outputs.loginServer}/bootstrap:${bootstrapImageTag}'
+    containerImage: empty(bootstrapImageTag) ? placeholderImage : '${acr.outputs.loginServer}/bootstrap:${bootstrapImageTag}'
     workloadProfileName: 'Consumption'
     ingressType: 'none'
     daprEnabled: false
@@ -237,7 +240,7 @@ module orderService 'modules/containerApp.bicep' = {
     location: location
     tags: union(tags, { 'azd-service-name': 'order-service' })
     environmentId: acaEnv.outputs.id
-    containerImage: '${acr.outputs.loginServer}/order-service:${orderServiceImageTag}'
+    containerImage: empty(orderServiceImageTag) ? placeholderImage : '${acr.outputs.loginServer}/order-service:${orderServiceImageTag}'
     workloadProfileName: 'dedicated-d4'
     ingressType: 'internal'
     daprEnabled: true
@@ -266,7 +269,7 @@ module accountingService 'modules/containerApp.bicep' = {
     location: location
     tags: union(tags, { 'azd-service-name': 'accounting-service' })
     environmentId: acaEnv.outputs.id
-    containerImage: '${acr.outputs.loginServer}/accounting-service:${accountingServiceImageTag}'
+    containerImage: empty(accountingServiceImageTag) ? placeholderImage : '${acr.outputs.loginServer}/accounting-service:${accountingServiceImageTag}'
     workloadProfileName: 'Consumption'
     ingressType: 'internal'
     daprEnabled: true
@@ -325,7 +328,7 @@ module loyaltyService 'modules/containerApp.bicep' = {
     location: location
     tags: union(tags, { 'azd-service-name': 'loyalty-service' })
     environmentId: acaEnv.outputs.id
-    containerImage: '${acr.outputs.loginServer}/loyalty-service:${loyaltyServiceImageTag}'
+    containerImage: empty(loyaltyServiceImageTag) ? placeholderImage : '${acr.outputs.loginServer}/loyalty-service:${loyaltyServiceImageTag}'
     workloadProfileName: 'Consumption'
     ingressType: 'internal'
     daprEnabled: true
@@ -360,7 +363,7 @@ module makelineService 'modules/containerApp.bicep' = {
     location: location
     tags: union(tags, { 'azd-service-name': 'makeline-service' })
     environmentId: acaEnv.outputs.id
-    containerImage: '${acr.outputs.loginServer}/makeline-service:${makelineServiceImageTag}'
+    containerImage: empty(makelineServiceImageTag) ? placeholderImage : '${acr.outputs.loginServer}/makeline-service:${makelineServiceImageTag}'
     workloadProfileName: 'dedicated-d4'
     ingressType: 'internal'
     daprEnabled: true
@@ -401,7 +404,7 @@ module receiptService 'modules/containerApp.bicep' = {
     location: location
     tags: union(tags, { 'azd-service-name': 'receipt-service' })
     environmentId: acaEnv.outputs.id
-    containerImage: '${acr.outputs.loginServer}/receipt-service:${receiptServiceImageTag}'
+    containerImage: empty(receiptServiceImageTag) ? placeholderImage : '${acr.outputs.loginServer}/receipt-service:${receiptServiceImageTag}'
     workloadProfileName: 'Consumption'
     ingressType: 'internal'
     daprEnabled: true
@@ -436,7 +439,7 @@ module ui 'modules/containerApp.bicep' = {
     location: location
     tags: union(tags, { 'azd-service-name': 'ui' })
     environmentId: acaEnv.outputs.id
-    containerImage: '${acr.outputs.loginServer}/ui:${uiImageTag}'
+    containerImage: empty(uiImageTag) ? placeholderImage : '${acr.outputs.loginServer}/ui:${uiImageTag}'
     containerPort: 3000
     workloadProfileName: 'Consumption'
     ingressType: 'external'
