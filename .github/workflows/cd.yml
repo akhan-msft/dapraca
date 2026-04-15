@@ -34,9 +34,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: azd auth (reuse Azure CLI token)
-        run: azd auth login --use-device-code=false --federated-credential-provider github
-
       - name: Set up Java 21 (for Maven builds in azd)
         uses: actions/setup-java@v4
         with:
@@ -56,14 +53,17 @@ jobs:
       - name: azd env set
         run: |
           azd env new ${{ env.AZURE_ENV_NAME }} --subscription ${{ env.AZURE_SUBSCRIPTION_ID }} --location ${{ env.AZURE_LOCATION }}
-          azd env set AZURE_PRINCIPAL_ID $(az ad signed-in-user show --query id -o tsv)
+          SP_OID=$(az ad sp show --id ${{ secrets.AZURE_CLIENT_ID }} --query id -o tsv)
+          azd env set AZURE_PRINCIPAL_ID "$SP_OID"
+        env:
+          AZURE_DEV_USE_AZURE_CLI_AUTH: "true"
 
       - name: azd provision & deploy
         run: azd up --no-prompt
         env:
-          AZURE_ENV_NAME: ${{ env.AZURE_ENV_NAME }}
-          AZURE_LOCATION: ${{ env.AZURE_LOCATION }}
-          AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          AZURE_DEV_USE_AZURE_CLI_AUTH: "true"
 
       - name: Output UI URL
         run: azd show --output json | jq -r '.services.ui.endpoint // "Deploy complete"'
+        env:
+          AZURE_DEV_USE_AZURE_CLI_AUTH: "true"
