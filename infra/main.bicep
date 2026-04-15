@@ -178,7 +178,22 @@ module acaEnv 'modules/containerAppsEnv.bicep' = {
   }
 }
 
-// ── Shared env vars injected into every container app ────────────────────────
+// ── Dapr Components ───────────────────────────────────────────────────────────
+module daprComponents 'modules/daprComponents.bicep' = {
+  name: 'daprComponents'
+  params: {
+    environmentName: acaEnv.outputs.name
+    serviceBusNamespace: serviceBus.outputs.name
+    redisHost: redis.outputs.hostName
+    redisPassword: redis.outputs.primaryKey
+    cosmosEndpoint: cosmos.outputs.endpoint
+    cosmosDatabase: cosmos.outputs.databaseName
+    cosmosContainer: cosmos.outputs.containerName
+    managedIdentityClientId: identity.outputs.clientId
+  }
+}
+
+// ── Shared env varsinjected into every container app ────────────────────────
 var commonEnv = [
   {
     name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
