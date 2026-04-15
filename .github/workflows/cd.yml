@@ -1,0 +1,69 @@
+name: CD — Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # OIDC for federated credential login
+  contents: read
+
+env:
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME || 'dapraca-dev' }}
+  AZURE_LOCATION: ${{ vars.AZURE_LOCATION || 'eastus' }}
+
+jobs:
+  deploy:
+    name: azd up
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install azd
+        uses: Azure/setup-azd@v1
+
+      - name: Azure login (OIDC federated credential)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: azd auth (reuse Azure CLI token)
+        run: azd auth login --use-device-code=false --federated-credential-provider github
+
+      - name: Set up Java 21 (for Maven builds in azd)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: azd env set
+        run: |
+          azd env new ${{ env.AZURE_ENV_NAME }} --subscription ${{ env.AZURE_SUBSCRIPTION_ID }} --location ${{ env.AZURE_LOCATION }}
+          azd env set AZURE_PRINCIPAL_ID $(az ad signed-in-user show --query id -o tsv)
+
+      - name: azd provision & deploy
+        run: azd up --no-prompt
+        env:
+          AZURE_ENV_NAME: ${{ env.AZURE_ENV_NAME }}
+          AZURE_LOCATION: ${{ env.AZURE_LOCATION }}
+          AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Output UI URL
+        run: azd show --output json | jq -r '.services.ui.endpoint // "Deploy complete"'

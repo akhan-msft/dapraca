@@ -1,0 +1,23 @@
+{
+  "name": "ui-bff",
+  "version": "1.0.0",
+  "description": "Red Dog UI — ReactJS + Node.js BFF",
+  "main": "server/index.js",
+  "scripts": {
+    "build:client": "cd client && npm install && npm run build",
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@azure/monitor-opentelemetry": "^1.7.0",
+    "axios": "^1.7.9",
+    "express": "^4.21.2",
+    "express-async-errors": "^3.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

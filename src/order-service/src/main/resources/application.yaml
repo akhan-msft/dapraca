@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: order-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+dapr:
+  pubsub:
+    name: pubsub-servicebus
+    topic: orders
+
+logging:
+  level:
+    com.dapraca: INFO
+    io.dapr: WARN

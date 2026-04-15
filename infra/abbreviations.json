@@ -1,0 +1,17 @@
+// Abbreviations for resource naming
+// Based on: https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations
+{
+  "Microsoft.App/containerApps": "ca",
+  "Microsoft.App/managedEnvironments": "cae",
+  "Microsoft.ContainerRegistry/registries": "cr",
+  "Microsoft.Insights/components": "appi",
+  "Microsoft.KeyVault/vaults": "kv",
+  "Microsoft.ManagedIdentity/userAssignedIdentities": "id",
+  "Microsoft.OperationalInsights/workspaces": "log",
+  "Microsoft.ServiceBus/namespaces": "sbns",
+  "Microsoft.DocumentDB/databaseAccounts": "cosmos",
+  "Microsoft.Sql/servers": "sql",
+  "Microsoft.Cache/redis": "redis",
+  "Microsoft.Storage/storageAccounts": "st",
+  "Microsoft.Resources/resourceGroups": "rg"
+}

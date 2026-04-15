@@ -1,0 +1,17 @@
+# Local blob storage binding — Azurite emulator
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: binding-blobstorage
+spec:
+  type: bindings.azure.blobstorage
+  version: v1
+  metadata:
+    - name: storageAccount
+      value: "devstoreaccount1"
+    - name: storageAccessKey
+      value: "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+    - name: container
+      value: "receipts"
+    - name: endpoint
+      value: "http://azurite:10000/devstoreaccount1"

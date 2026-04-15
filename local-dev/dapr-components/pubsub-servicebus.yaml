@@ -1,0 +1,11 @@
+# Local pub/sub component — uses Service Bus emulator
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: pubsub-servicebus
+spec:
+  type: pubsub.azure.servicebus.topics
+  version: v1
+  metadata:
+    - name: connectionString
+      value: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"

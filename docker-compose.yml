@@ -1,0 +1,175 @@
+# Red Dog — Local Development with Docker Compose + Dapr
+
+# Runs all 7 services locally with Dapr sidecars and local backing services.
+# Prerequisites: Docker Desktop, Dapr CLI (`dapr init`)
+#
+# Usage:
+#   docker compose up -d
+#   # All services available at http://localhost:3000 (UI)
+
+services:
+
+  # ── Local backing services ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    ports: ["10000:10000", "10001:10001", "10002:10002"]
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0
+
+  servicebus-emulator:
+    # Local Azure Service Bus emulator
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    ports: ["5672:5672", "5300:5300"]
+    environment:
+      ACCEPT_EULA: "Y"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5300/"]
+      interval: 10s
+      retries: 5
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "RedDog@Local123!"
+      MSSQL_PID: "Developer"
+    ports: ["1433:1433"]
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "RedDog@Local123!", "-Q", "SELECT 1", "-C"]
+      interval: 10s
+      retries: 5
+
+  # Dapr placement service (required for Dapr actors — not used here but good practice)
+  placement:
+    image: daprio/placement:1.13.0
+    ports: ["50006:50006"]
+    command: ["./placement", "-port", "50006"]
+
+  # ── Bootstrap ─────────────────────────────────────────────────────────────
+  bootstrap:
+    build: ./src/bootstrap
+    environment:
+      SQL_SERVER: sqlserver
+      SQL_DATABASE: reddog
+      SQL_PASSWORD: "RedDog@Local123!"   # local only
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ""
+    depends_on:
+      sqlserver: { condition: service_healthy }
+
+  # ── Dapr sidecars + services ───────────────────────────────────────────────
+  order-service:
+    build: ./src/order-service
+    ports: ["8080:8080"]
+    environment:
+      DAPR_HTTP_PORT: "3500"
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ""
+    depends_on: [placement]
+
+  order-service-dapr:
+    image: daprio/daprd:1.13.0
+    command:
+      - "./daprd"
+      - "--app-id=order-service"
+      - "--app-port=8080"
+      - "--dapr-http-port=3500"
+      - "--dapr-grpc-port=50001"
+      - "--placement-host-address=placement:50006"
+      - "--components-path=/components"
+      - "--log-level=info"
+    volumes:
+      - ./local-dev/dapr-components:/components
+    network_mode: "service:order-service"
+    depends_on: [order-service, placement]
+
+  accounting-service:
+    build: ./src/accounting-service
+    ports: ["8081:8080"]
+    environment:
+      SQL_SERVER: sqlserver
+      SQL_DATABASE: reddog
+      DAPR_HTTP_PORT: "3500"
+      SPRING_DATASOURCE_URL: "jdbc:sqlserver://sqlserver;databaseName=reddog;user=sa;password=RedDog@Local123!;encrypt=false"
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ""
+    depends_on: [sqlserver, placement]
+
+  accounting-service-dapr:
+    image: daprio/daprd:1.13.0
+    command: ["./daprd", "--app-id=accounting-service", "--app-port=8080", "--dapr-http-port=3500", "--placement-host-address=placement:50006", "--components-path=/components"]
+    volumes:
+      - ./local-dev/dapr-components:/components
+    network_mode: "service:accounting-service"
+    depends_on: [accounting-service, placement]
+
+  loyalty-service:
+    build: ./src/loyalty-service
+    ports: ["8082:8080"]
+    environment:
+      DAPR_HTTP_PORT: "3500"
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ""
+    depends_on: [redis, placement]
+
+  loyalty-service-dapr:
+    image: daprio/daprd:1.13.0
+    command: ["./daprd", "--app-id=loyalty-service", "--app-port=8080", "--dapr-http-port=3500", "--placement-host-address=placement:50006", "--components-path=/components"]
+    volumes:
+      - ./local-dev/dapr-components:/components
+    network_mode: "service:loyalty-service"
+    depends_on: [loyalty-service, placement]
+
+  makeline-service:
+    build: ./src/makeline-service
+    ports: ["8083:8080"]
+    environment:
+      DAPR_HTTP_PORT: "3500"
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ""
+    depends_on: [redis, placement]
+
+  makeline-service-dapr:
+    image: daprio/daprd:1.13.0
+    command: ["./daprd", "--app-id=makeline-service", "--app-port=8080", "--dapr-http-port=3500", "--placement-host-address=placement:50006", "--components-path=/components"]
+    volumes:
+      - ./local-dev/dapr-components:/components
+    network_mode: "service:makeline-service"
+    depends_on: [makeline-service, placement]
+
+  receipt-service:
+    build: ./src/receipt-service/src/ReceiptService
+    ports: ["8084:8080"]
+    environment:
+      DAPR_HTTP_PORT: "3500"
+      ASPNETCORE_URLS: "http://+:8080"
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ""
+    depends_on: [azurite, placement]
+
+  receipt-service-dapr:
+    image: daprio/daprd:1.13.0
+    command: ["./daprd", "--app-id=receipt-service", "--app-port=8080", "--dapr-http-port=3500", "--placement-host-address=placement:50006", "--components-path=/components"]
+    volumes:
+      - ./local-dev/dapr-components:/components
+    network_mode: "service:receipt-service"
+    depends_on: [receipt-service, placement]
+
+  ui:
+    build: ./src/ui
+    ports: ["3000:3000"]
+    environment:
+      DAPR_HTTP_PORT: "3500"
+      ORDER_SERVICE_APP_ID: "order-service"
+      ACCOUNTING_SERVICE_APP_ID: "accounting-service"
+      MAKELINE_SERVICE_APP_ID: "makeline-service"
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ""
+    depends_on: [order-service, accounting-service, makeline-service]
+
+  ui-dapr:
+    image: daprio/daprd:1.13.0
+    command: ["./daprd", "--app-id=ui", "--app-port=3000", "--dapr-http-port=3500", "--placement-host-address=placement:50006", "--components-path=/components"]
+    volumes:
+      - ./local-dev/dapr-components:/components
+    network_mode: "service:ui"
+    depends_on: [ui, placement]

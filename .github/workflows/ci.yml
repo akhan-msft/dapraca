@@ -1,0 +1,128 @@
+name: CI — Build & Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Java services ─────────────────────────────────────────────────────────
+  java-services:
+    name: Build & Test (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - order-service
+          - accounting-service
+          - loyalty-service
+          - makeline-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build & Test
+        working-directory: src/${{ matrix.service }}
+        run: mvn verify -B -q
+
+      - name: Build Docker image (validate only)
+        working-directory: src/${{ matrix.service }}
+        run: docker build -t ${{ matrix.service }}:ci .
+
+  # ── .NET service ──────────────────────────────────────────────────────────
+  receipt-service:
+    name: Build & Test (receipt-service)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build & Test
+        working-directory: src/receipt-service/src/ReceiptService
+        run: |
+          dotnet restore
+          dotnet build -c Release --no-restore
+          dotnet test --no-build -c Release
+
+      - name: Build Docker image (validate only)
+        working-directory: src/receipt-service/src/ReceiptService
+        run: docker build -t receipt-service:ci .
+
+  # ── Python service ────────────────────────────────────────────────────────
+  bootstrap:
+    name: Build & Lint (bootstrap)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install & Lint
+        working-directory: src/bootstrap
+        run: |
+          pip install -r requirements.txt
+          pip install ruff
+          ruff check main.py
+
+      - name: Build Docker image (validate only)
+        working-directory: src/bootstrap
+        run: docker build -t bootstrap:ci .
+
+  # ── UI (Node + React) ─────────────────────────────────────────────────────
+  ui:
+    name: Build & Test (ui)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: src/ui/client/package-lock.json
+
+      - name: Build React client
+        working-directory: src/ui/client
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install BFF dependencies
+        working-directory: src/ui
+        run: npm ci --omit=dev
+
+      - name: Build Docker image (validate only)
+        working-directory: src/ui
+        run: docker build -t ui:ci .
+
+  # ── Bicep lint ─────────────────────────────────────────────────────────────
+  bicep-lint:
+    name: Lint Bicep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure CLI login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Bicep build (lint)
+        run: az bicep build --file infra/main.bicep

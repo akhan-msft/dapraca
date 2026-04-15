@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: dapraca
+metadata:
+  template: dapraca@0.0.1
+
+pipeline:
+  provider: github
+
+services:
+  ui:
+    project: ./src/ui
+    language: js
+    host: containerapp
+
+  order-service:
+    project: ./src/order-service
+    language: java
+    host: containerapp
+
+  accounting-service:
+    project: ./src/accounting-service
+    language: java
+    host: containerapp
+
+  loyalty-service:
+    project: ./src/loyalty-service
+    language: java
+    host: containerapp
+
+  makeline-service:
+    project: ./src/makeline-service
+    language: java
+    host: containerapp
+
+  receipt-service:
+    project: ./src/receipt-service
+    language: dotnet
+    host: containerapp
+
+  bootstrap:
+    project: ./src/bootstrap
+    language: python
+    host: containerapp
