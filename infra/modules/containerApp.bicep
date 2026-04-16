@@ -44,7 +44,7 @@ param scaleRules array = []
 param minReplicas int = 0
 param maxReplicas int = 10
 
-resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
+resource containerApp 'Microsoft.App/containerApps@2025-07-01' = {
   name: name
   location: location
   tags: tags
