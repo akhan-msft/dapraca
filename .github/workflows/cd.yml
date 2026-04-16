@@ -60,8 +60,6 @@ jobs:
       - name: azd env set
         run: |
           azd env new ${{ env.AZURE_ENV_NAME }} --subscription ${{ env.AZURE_SUBSCRIPTION_ID }} --location ${{ env.AZURE_LOCATION }}
-          SP_OID=$(az ad sp show --id ${{ secrets.AZURE_CLIENT_ID }} --query id -o tsv)
-          azd env set AZURE_PRINCIPAL_ID "$SP_OID"
 
       - name: azd provision & deploy
         run: azd up --no-prompt

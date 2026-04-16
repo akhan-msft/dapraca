@@ -12,9 +12,6 @@ param environmentName string
 @description('Azure region for all resources.')
 param location string = resourceGroup().location
 
-@description('Object ID of the identity that runs deployments — used as SQL Active Directory admin.')
-param deploymentPrincipalId string = ''
-
 // ── Container image tags (set by azd deploy; empty = use placeholder for initial provision) ─────
 param uiImageTag string = ''
 param orderServiceImageTag string = ''
@@ -106,7 +103,7 @@ module sql 'modules/sql.bicep' = {
     serverName: names.sql
     location: location
     tags: tags
-    adminObjectId: !empty(deploymentPrincipalId) ? deploymentPrincipalId : identity.outputs.principalId
+    adminObjectId: identity.outputs.principalId
   }
 }
 
@@ -305,18 +302,13 @@ module accountingService 'modules/containerApp.bicep' = {
         name: 'servicebus-scale'
         custom: {
           type: 'azure-servicebus'
+          identity: identity.outputs.identityId
           metadata: {
-            namespace: serviceBus.outputs.name
+            namespace: serviceBus.outputs.endpoint
             topicName: 'orders'
             subscriptionName: 'accounting-service'
             messageCount: '10'
           }
-          auth: [
-            {
-              secretRef: 'azure-client-id-placeholder'
-              triggerParameter: 'clientId'
-            }
-          ]
         }
       }
       {
@@ -366,8 +358,9 @@ module loyaltyService 'modules/containerApp.bicep' = {
         name: 'servicebus-scale'
         custom: {
           type: 'azure-servicebus'
+          identity: identity.outputs.identityId
           metadata: {
-            namespace: serviceBus.outputs.name
+            namespace: serviceBus.outputs.endpoint
             topicName: 'orders'
             subscriptionName: 'loyalty-service'
             messageCount: '10'
@@ -405,8 +398,9 @@ module makelineService 'modules/containerApp.bicep' = {
         name: 'servicebus-scale'
         custom: {
           type: 'azure-servicebus'
+          identity: identity.outputs.identityId
           metadata: {
-            namespace: serviceBus.outputs.name
+            namespace: serviceBus.outputs.endpoint
             topicName: 'orders'
             subscriptionName: 'makeline-service'
             messageCount: '10'
@@ -446,8 +440,9 @@ module receiptService 'modules/containerApp.bicep' = {
         name: 'servicebus-scale'
         custom: {
           type: 'azure-servicebus'
+          identity: identity.outputs.identityId
           metadata: {
-            namespace: serviceBus.outputs.name
+            namespace: serviceBus.outputs.endpoint
             topicName: 'orders'
             subscriptionName: 'receipt-service'
             messageCount: '10'
