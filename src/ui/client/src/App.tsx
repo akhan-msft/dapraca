@@ -39,15 +39,23 @@ interface OrderSummary {
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
+const emptyQueue: QueueSummary = { totalQueued: 0, totalProcessing: 0, orders: [] }
+
+async function safeFetch<T>(url: string, fallback: T): Promise<T> {
+  try {
+    const r = await fetch(url)
+    if (!r.ok) return fallback
+    const data = await r.json()
+    return data ?? fallback
+  } catch { return fallback }
+}
+
 const api = {
   placeOrder: (body: unknown) =>
     fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
-  getMetrics: (): Promise<OrderMetrics[]> =>
-    fetch('/api/accounting/metrics').then(r => r.json()),
-  getQueue: (): Promise<QueueSummary> =>
-    fetch('/api/makeline/orders').then(r => r.json()),
-  getOrderHistory: (): Promise<OrderSummary[]> =>
-    fetch('/api/accounting/orders?limit=100').then(r => r.json()),
+  getMetrics: (): Promise<OrderMetrics[]> => safeFetch('/api/accounting/metrics', []),
+  getQueue: (): Promise<QueueSummary> => safeFetch('/api/makeline/orders', emptyQueue),
+  getOrderHistory: (): Promise<OrderSummary[]> => safeFetch('/api/accounting/orders?limit=100', []),
   completeOrder: (orderId: string) =>
     fetch(`/api/makeline/orders/${orderId}/complete`, { method: 'PUT' }),
 }
@@ -55,15 +63,15 @@ const api = {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function KpiCards({ metrics, queue }: { metrics: OrderMetrics[], queue: QueueSummary }) {
-  const totals = metrics.reduce(
-    (acc, m) => ({ orders: acc.orders + m.totalOrders, revenue: acc.revenue + m.totalRevenue }),
+  const totals = (metrics ?? []).reduce(
+    (acc, m) => ({ orders: acc.orders + (m.totalOrders ?? 0), revenue: acc.revenue + (m.totalRevenue ?? 0) }),
     { orders: 0, revenue: 0 }
   )
   const kpis = [
     { label: 'Total Orders', value: totals.orders.toLocaleString(), icon: '📦', color: 'primary' },
     { label: 'Total Revenue', value: `$${totals.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: '💰', color: 'success' },
-    { label: 'Queued', value: queue.totalQueued.toString(), icon: '⏳', color: 'warning' },
-    { label: 'Processing', value: queue.totalProcessing.toString(), icon: '⚙️', color: 'info' },
+    { label: 'Queued', value: String(queue?.totalQueued ?? 0), icon: '⏳', color: 'warning' },
+    { label: 'Processing', value: String(queue?.totalProcessing ?? 0), icon: '⚙️', color: 'info' },
   ]
   return (
     <Row className="g-3 mb-4">
@@ -205,7 +213,7 @@ function KitchenQueueTab({ queue, onComplete, onRefresh }: { queue: QueueSummary
                       </Badge>
                     </div>
                     <div className="d-flex justify-content-between align-items-center">
-                      <span className="fs-5 fw-bold text-primary">${order.orderTotal?.toFixed(2)}</span>
+                      <span className="fs-5 fw-bold text-primary">${(order.orderTotal ?? 0).toFixed(2)}</span>
                       {order.status === 'queued' && (
                         <Button variant="outline-success" size="sm" onClick={() => onComplete(order.orderId)}>✅ Complete</Button>
                       )}
@@ -247,7 +255,7 @@ function OrderHistoryTab({ orders, loading }: { orders: OrderSummary[], loading:
                 <td><code className="text-primary">{o.orderId.slice(0, 8)}…</code></td>
                 <td>{o.customerName}</td>
                 <td><Badge bg="secondary">{o.storeId}</Badge></td>
-                <td><strong>${o.orderTotal?.toFixed(2)}</strong></td>
+                <td><strong>${(o.orderTotal ?? 0).toFixed(2)}</strong></td>
                 <td className="text-muted small">{o.orderDate ? new Date(o.orderDate).toLocaleString() : '—'}</td>
                 <td>
                   <Badge bg={o.status === 'pending' ? 'warning' : 'success'} text={o.status === 'pending' ? 'dark' : undefined}>
@@ -276,15 +284,15 @@ function MetricsTab({ metrics }: { metrics: OrderMetrics[] }) {
             <Card.Body>
               <Row className="text-center g-2">
                 <Col xs={4}>
-                  <div className="fs-3 fw-bold text-primary">{m.totalOrders}</div>
+                  <div className="fs-3 fw-bold text-primary">{m.totalOrders ?? 0}</div>
                   <div className="text-muted small">Orders</div>
                 </Col>
                 <Col xs={4}>
-                  <div className="fs-3 fw-bold text-success">${m.totalRevenue?.toFixed(0)}</div>
+                  <div className="fs-3 fw-bold text-success">${(m.totalRevenue ?? 0).toFixed(0)}</div>
                   <div className="text-muted small">Revenue</div>
                 </Col>
                 <Col xs={4}>
-                  <div className="fs-3 fw-bold text-info">${m.avgOrderValue?.toFixed(2)}</div>
+                  <div className="fs-3 fw-bold text-info">${(m.avgOrderValue ?? 0).toFixed(2)}</div>
                   <div className="text-muted small">Avg Order</div>
                 </Col>
               </Row>
