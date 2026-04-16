@@ -1,12 +1,11 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "languageVersion": "2.0",
   "contentVersion": "1.0.0.0",
   "metadata": {
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "4197601379133309032"
+      "templateHash": "17127322227065695352"
     }
   },
   "parameters": {
@@ -26,40 +25,33 @@
         "description": "Azure region for all resources."
       }
     },
-    "deploymentPrincipalId": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Object ID of the identity that runs deployments — used as SQL Active Directory admin."
-      }
-    },
     "uiImageTag": {
       "type": "string",
-      "defaultValue": "latest"
+      "defaultValue": ""
     },
     "orderServiceImageTag": {
       "type": "string",
-      "defaultValue": "latest"
+      "defaultValue": ""
     },
     "accountingServiceImageTag": {
       "type": "string",
-      "defaultValue": "latest"
+      "defaultValue": ""
     },
     "loyaltyServiceImageTag": {
       "type": "string",
-      "defaultValue": "latest"
+      "defaultValue": ""
     },
     "makelineServiceImageTag": {
       "type": "string",
-      "defaultValue": "latest"
+      "defaultValue": ""
     },
     "receiptServiceImageTag": {
       "type": "string",
-      "defaultValue": "latest"
+      "defaultValue": ""
     },
     "bootstrapImageTag": {
       "type": "string",
-      "defaultValue": "latest"
+      "defaultValue": ""
     }
   },
   "variables": {
@@ -78,6 +70,7 @@
       "Microsoft.Storage/storageAccounts": "st",
       "Microsoft.Resources/resourceGroups": "rg"
     },
+    "placeholderImage": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
     "abbrs": "[variables('$fxv#0')]",
     "resourceToken": "[toLower(uniqueString(resourceGroup().id, parameters('environmentName')))]",
     "tags": {
@@ -99,8 +92,8 @@
       "acaEnv": "[format('{0}-reddog-{1}', variables('abbrs')['Microsoft.App/managedEnvironments'], variables('resourceToken'))]"
     }
   },
-  "resources": {
-    "monitoring": {
+  "resources": [
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "monitoring",
@@ -214,7 +207,7 @@
         }
       }
     },
-    "acr": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "acr",
@@ -292,7 +285,7 @@
         }
       }
     },
-    "serviceBus": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "servicebus",
@@ -414,7 +407,7 @@
         }
       }
     },
-    "cosmos": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "cosmosdb",
@@ -441,7 +434,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "19160453784651953"
+              "templateHash": "12276050756652177616"
             }
           },
           "parameters": {
@@ -468,7 +461,7 @@
           "resources": [
             {
               "type": "Microsoft.DocumentDB/databaseAccounts",
-              "apiVersion": "2024-02-15-preview",
+              "apiVersion": "2024-05-15",
               "name": "[parameters('accountName')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -499,7 +492,7 @@
             },
             {
               "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
-              "apiVersion": "2024-02-15-preview",
+              "apiVersion": "2024-05-15",
               "name": "[format('{0}/{1}', parameters('accountName'), parameters('databaseName'))]",
               "properties": {
                 "resource": {
@@ -512,7 +505,7 @@
             },
             {
               "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
-              "apiVersion": "2024-02-15-preview",
+              "apiVersion": "2024-05-15",
               "name": "[format('{0}/{1}/{2}', parameters('accountName'), parameters('databaseName'), parameters('containerName'))]",
               "properties": {
                 "resource": {
@@ -555,7 +548,7 @@
             },
             "endpoint": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('accountName')), '2024-02-15-preview').documentEndpoint]"
+              "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('accountName')), '2024-05-15').documentEndpoint]"
             },
             "databaseName": {
               "type": "string",
@@ -569,7 +562,7 @@
         }
       }
     },
-    "identity": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "identity",
@@ -596,7 +589,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "7924642376973580428"
+              "templateHash": "17688369925349517078"
             }
           },
           "parameters": {
@@ -657,14 +650,13 @@
             },
             {
               "condition": "[not(empty(parameters('cosmosAccountId')))]",
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "name": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name')), parameters('cosmosAccountId'), 'CosmosDataContributor')]",
+              "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+              "apiVersion": "2024-05-15",
+              "name": "[format('{0}/{1}', last(split(parameters('cosmosAccountId'), '/')), guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name')), parameters('cosmosAccountId'), 'CosmosDataContributor'))]",
               "properties": {
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002')]",
+                "roleDefinitionId": "[format('{0}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002', parameters('cosmosAccountId'))]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name')), '2023-01-31').principalId]",
-                "principalType": "ServicePrincipal",
-                "description": "Cosmos DB Data Contributor for loyalty-service"
+                "scope": "[parameters('cosmosAccountId')]"
               },
               "dependsOn": [
                 "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name'))]"
@@ -733,7 +725,7 @@
         }
       }
     },
-    "sql": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "sql",
@@ -752,7 +744,9 @@
           "tags": {
             "value": "[variables('tags')]"
           },
-          "adminObjectId": "[if(not(empty(parameters('deploymentPrincipalId'))), createObject('value', parameters('deploymentPrincipalId')), createObject('value', reference('identity').outputs.principalId.value))]"
+          "adminObjectId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.principalId.value]"
+          }
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
@@ -868,10 +862,10 @@
         }
       },
       "dependsOn": [
-        "identity"
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]"
       ]
     },
-    "redis": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "redis",
@@ -889,17 +883,22 @@
           },
           "tags": {
             "value": "[variables('tags')]"
+          },
+          "managedIdentityPrincipalId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.principalId.value]"
+          },
+          "managedIdentityAlias": {
+            "value": "[variables('names').identity]"
           }
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "languageVersion": "2.0",
           "contentVersion": "1.0.0.0",
           "metadata": {
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "11353246731876990149"
+              "templateHash": "3941750600640646490"
             }
           },
           "parameters": {
@@ -913,10 +912,24 @@
             "tags": {
               "type": "object",
               "defaultValue": {}
+            },
+            "managedIdentityPrincipalId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Principal ID of the managed identity to grant Redis Data Owner access"
+              }
+            },
+            "managedIdentityAlias": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Display name / alias for the access policy assignment"
+              }
             }
           },
-          "resources": {
-            "redis": {
+          "resources": [
+            {
               "type": "Microsoft.Cache/redis",
               "apiVersion": "2024-03-01",
               "name": "[parameters('name')]",
@@ -931,13 +944,28 @@
                 "enableNonSslPort": false,
                 "minimumTlsVersion": "1.2",
                 "redisConfiguration": {
-                  "maxmemory-policy": "allkeys-lru"
+                  "maxmemory-policy": "allkeys-lru",
+                  "aad-enabled": "true"
                 },
                 "publicNetworkAccess": "Enabled"
               },
               "zones": []
+            },
+            {
+              "condition": "[not(empty(parameters('managedIdentityPrincipalId')))]",
+              "type": "Microsoft.Cache/redis/accessPolicyAssignments",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('name'), 'mi-data-owner')]",
+              "properties": {
+                "accessPolicyName": "Data Owner",
+                "objectId": "[parameters('managedIdentityPrincipalId')]",
+                "objectIdAlias": "[if(not(empty(parameters('managedIdentityAlias'))), parameters('managedIdentityAlias'), 'managed-identity')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Cache/redis', parameters('name'))]"
+              ]
             }
-          },
+          ],
           "outputs": {
             "id": {
               "type": "string",
@@ -949,21 +977,20 @@
             },
             "hostName": {
               "type": "string",
-              "value": "[reference('redis').hostName]"
+              "value": "[reference(resourceId('Microsoft.Cache/redis', parameters('name')), '2024-03-01').hostName]"
             },
             "sslPort": {
               "type": "int",
-              "value": "[reference('redis').sslPort]"
-            },
-            "primaryKey": {
-              "type": "securestring",
-              "value": "[listKeys('redis', '2024-03-01').primaryKey]"
+              "value": "[reference(resourceId('Microsoft.Cache/redis', parameters('name')), '2024-03-01').sslPort]"
             }
           }
         }
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]"
+      ]
     },
-    "storage": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "storage",
@@ -1073,7 +1100,7 @@
         }
       }
     },
-    "keyVault": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "keyvault",
@@ -1096,31 +1123,27 @@
             "value": [
               {
                 "name": "appinsights-connection-string",
-                "value": "[reference('monitoring').outputs.appInsightsConnectionString.value]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'monitoring'), '2022-09-01').outputs.appInsightsConnectionString.value]"
               },
               {
                 "name": "redis-host",
-                "value": "[listOutputsWithSecureValues(resourceId('Microsoft.Resources/deployments', 'redis'), '2022-09-01').hostName]"
-              },
-              {
-                "name": "redis-password",
-                "value": "[listOutputsWithSecureValues(resourceId('Microsoft.Resources/deployments', 'redis'), '2022-09-01').primaryKey]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'redis'), '2022-09-01').outputs.hostName.value]"
               },
               {
                 "name": "sql-server-fqdn",
-                "value": "[reference('sql').outputs.serverFqdn.value]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'sql'), '2022-09-01').outputs.serverFqdn.value]"
               },
               {
                 "name": "sql-database-name",
-                "value": "[reference('sql').outputs.databaseName.value]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'sql'), '2022-09-01').outputs.databaseName.value]"
               },
               {
                 "name": "servicebus-namespace",
-                "value": "[reference('serviceBus').outputs.endpoint.value]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'servicebus'), '2022-09-01').outputs.endpoint.value]"
               },
               {
                 "name": "cosmos-endpoint",
-                "value": "[reference('cosmos').outputs.endpoint.value]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'cosmosdb'), '2022-09-01').outputs.endpoint.value]"
               }
             ]
           }
@@ -1132,7 +1155,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "1198495862127052355"
+              "templateHash": "12147068628018629995"
             }
           },
           "parameters": {
@@ -1168,7 +1191,6 @@
                 "enableRbacAuthorization": true,
                 "enableSoftDelete": true,
                 "softDeleteRetentionInDays": 7,
-                "enablePurgeProtection": false,
                 "publicNetworkAccess": "Enabled",
                 "networkAcls": {
                   "defaultAction": "Allow",
@@ -1209,14 +1231,14 @@
         }
       },
       "dependsOn": [
-        "cosmos",
-        "monitoring",
-        "redis",
-        "serviceBus",
-        "sql"
+        "[resourceId('Microsoft.Resources/deployments', 'cosmosdb')]",
+        "[resourceId('Microsoft.Resources/deployments', 'monitoring')]",
+        "[resourceId('Microsoft.Resources/deployments', 'redis')]",
+        "[resourceId('Microsoft.Resources/deployments', 'servicebus')]",
+        "[resourceId('Microsoft.Resources/deployments', 'sql')]"
       ]
     },
-    "identityRbac": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "identity-rbac",
@@ -1236,19 +1258,19 @@
             "value": "[variables('tags')]"
           },
           "serviceBusNamespaceId": {
-            "value": "[reference('serviceBus').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'servicebus'), '2022-09-01').outputs.id.value]"
           },
           "cosmosAccountId": {
-            "value": "[reference('cosmos').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'cosmosdb'), '2022-09-01').outputs.id.value]"
           },
           "storageAccountId": {
-            "value": "[reference('storage').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'storage'), '2022-09-01').outputs.id.value]"
           },
           "keyVaultId": {
-            "value": "[reference('keyVault').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.id.value]"
           },
           "acrId": {
-            "value": "[reference('acr').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.id.value]"
           }
         },
         "template": {
@@ -1258,7 +1280,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "7924642376973580428"
+              "templateHash": "17688369925349517078"
             }
           },
           "parameters": {
@@ -1319,14 +1341,13 @@
             },
             {
               "condition": "[not(empty(parameters('cosmosAccountId')))]",
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "name": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name')), parameters('cosmosAccountId'), 'CosmosDataContributor')]",
+              "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+              "apiVersion": "2024-05-15",
+              "name": "[format('{0}/{1}', last(split(parameters('cosmosAccountId'), '/')), guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name')), parameters('cosmosAccountId'), 'CosmosDataContributor'))]",
               "properties": {
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002')]",
+                "roleDefinitionId": "[format('{0}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002', parameters('cosmosAccountId'))]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name')), '2023-01-31').principalId]",
-                "principalType": "ServicePrincipal",
-                "description": "Cosmos DB Data Contributor for loyalty-service"
+                "scope": "[parameters('cosmosAccountId')]"
               },
               "dependsOn": [
                 "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name'))]"
@@ -1395,15 +1416,15 @@
         }
       },
       "dependsOn": [
-        "acr",
-        "cosmos",
-        "identity",
-        "keyVault",
-        "serviceBus",
-        "storage"
+        "[resourceId('Microsoft.Resources/deployments', 'acr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'cosmosdb')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyvault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'servicebus')]",
+        "[resourceId('Microsoft.Resources/deployments', 'storage')]"
       ]
     },
-    "acaEnv": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "acaEnvironment",
@@ -1423,10 +1444,10 @@
             "value": "[variables('tags')]"
           },
           "logAnalyticsWorkspaceName": {
-            "value": "[reference('monitoring').outputs.logAnalyticsWorkspaceName.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'monitoring'), '2022-09-01').outputs.logAnalyticsWorkspaceName.value]"
           },
           "daprAIConnectionString": {
-            "value": "[reference('monitoring').outputs.appInsightsConnectionString.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'monitoring'), '2022-09-01').outputs.appInsightsConnectionString.value]"
           }
         },
         "template": {
@@ -1516,10 +1537,231 @@
         }
       },
       "dependsOn": [
-        "monitoring"
+        "[resourceId('Microsoft.Resources/deployments', 'monitoring')]"
       ]
     },
-    "bootstrap": {
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "daprComponents",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "environmentName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvironment'), '2022-09-01').outputs.name.value]"
+          },
+          "serviceBusNamespace": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'servicebus'), '2022-09-01').outputs.name.value]"
+          },
+          "redisHost": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'redis'), '2022-09-01').outputs.hostName.value]"
+          },
+          "cosmosEndpoint": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'cosmosdb'), '2022-09-01').outputs.endpoint.value]"
+          },
+          "cosmosDatabase": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'cosmosdb'), '2022-09-01').outputs.databaseName.value]"
+          },
+          "cosmosContainer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'cosmosdb'), '2022-09-01').outputs.containerName.value]"
+          },
+          "managedIdentityClientId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.clientId.value]"
+          },
+          "storageAccountName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'storage'), '2022-09-01').outputs.name.value]"
+          },
+          "storageContainerName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'storage'), '2022-09-01').outputs.receiptContainerName.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.35.1.17967",
+              "templateHash": "4100615184887208040"
+            }
+          },
+          "parameters": {
+            "environmentName": {
+              "type": "string"
+            },
+            "serviceBusNamespace": {
+              "type": "string",
+              "metadata": {
+                "description": "Service Bus namespace name (without .servicebus.windows.net suffix)"
+              }
+            },
+            "redisHost": {
+              "type": "string",
+              "metadata": {
+                "description": "Redis cache hostname"
+              }
+            },
+            "cosmosEndpoint": {
+              "type": "string",
+              "metadata": {
+                "description": "Cosmos DB account endpoint URL"
+              }
+            },
+            "cosmosDatabase": {
+              "type": "string"
+            },
+            "cosmosContainer": {
+              "type": "string"
+            },
+            "managedIdentityClientId": {
+              "type": "string",
+              "metadata": {
+                "description": "Client ID of the user-assigned managed identity used by all services"
+              }
+            },
+            "storageAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Storage account name for receipt blob binding"
+              }
+            },
+            "storageContainerName": {
+              "type": "string",
+              "defaultValue": "receipts",
+              "metadata": {
+                "description": "Blob container name for receipts"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.App/managedEnvironments/daprComponents",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('environmentName'), 'pubsub-servicebus')]",
+              "properties": {
+                "componentType": "pubsub.azure.servicebus.topics",
+                "version": "v1",
+                "metadata": [
+                  {
+                    "name": "namespaceName",
+                    "value": "[format('{0}.servicebus.windows.net', parameters('serviceBusNamespace'))]"
+                  },
+                  {
+                    "name": "azureClientId",
+                    "value": "[parameters('managedIdentityClientId')]"
+                  }
+                ],
+                "scopes": [
+                  "order-service",
+                  "makeline-service",
+                  "accounting-service",
+                  "loyalty-service",
+                  "receipt-service"
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.App/managedEnvironments/daprComponents",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('environmentName'), 'statestore-redis')]",
+              "properties": {
+                "componentType": "state.redis",
+                "version": "v1",
+                "metadata": [
+                  {
+                    "name": "redisHost",
+                    "value": "[format('{0}:6380', parameters('redisHost'))]"
+                  },
+                  {
+                    "name": "enableTLS",
+                    "value": "true"
+                  },
+                  {
+                    "name": "useEntraID",
+                    "value": "true"
+                  },
+                  {
+                    "name": "azureClientId",
+                    "value": "[parameters('managedIdentityClientId')]"
+                  }
+                ],
+                "scopes": [
+                  "makeline-service"
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.App/managedEnvironments/daprComponents",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('environmentName'), 'statestore-cosmosdb')]",
+              "properties": {
+                "componentType": "state.azure.cosmosdb",
+                "version": "v1",
+                "metadata": [
+                  {
+                    "name": "url",
+                    "value": "[parameters('cosmosEndpoint')]"
+                  },
+                  {
+                    "name": "database",
+                    "value": "[parameters('cosmosDatabase')]"
+                  },
+                  {
+                    "name": "collection",
+                    "value": "[parameters('cosmosContainer')]"
+                  },
+                  {
+                    "name": "azureClientId",
+                    "value": "[parameters('managedIdentityClientId')]"
+                  }
+                ],
+                "scopes": [
+                  "loyalty-service"
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.App/managedEnvironments/daprComponents",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('environmentName'), 'binding-blobstorage')]",
+              "properties": {
+                "componentType": "bindings.azure.blobstorage",
+                "version": "v1",
+                "metadata": [
+                  {
+                    "name": "accountName",
+                    "value": "[parameters('storageAccountName')]"
+                  },
+                  {
+                    "name": "containerName",
+                    "value": "[parameters('storageContainerName')]"
+                  },
+                  {
+                    "name": "azureClientId",
+                    "value": "[parameters('managedIdentityClientId')]"
+                  }
+                ],
+                "scopes": [
+                  "receipt-service"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvironment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'cosmosdb')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'redis')]",
+        "[resourceId('Microsoft.Resources/deployments', 'servicebus')]",
+        "[resourceId('Microsoft.Resources/deployments', 'storage')]"
+      ]
+    },
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "bootstrap",
@@ -1539,11 +1781,9 @@
             "value": "[union(variables('tags'), createObject('azd-service-name', 'bootstrap'))]"
           },
           "environmentId": {
-            "value": "[reference('acaEnv').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvironment'), '2022-09-01').outputs.id.value]"
           },
-          "containerImage": {
-            "value": "[format('{0}/bootstrap:{1}', reference('acr').outputs.loginServer.value, parameters('bootstrapImageTag'))]"
-          },
+          "containerImage": "[if(empty(parameters('bootstrapImageTag')), createObject('value', variables('placeholderImage')), createObject('value', format('{0}/bootstrap:{1}', reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value, parameters('bootstrapImageTag'))))]",
           "workloadProfileName": {
             "value": "Consumption"
           },
@@ -1554,7 +1794,10 @@
             "value": false
           },
           "userAssignedIdentityId": {
-            "value": "[reference('identity').outputs.identityId.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
+          },
+          "acrLoginServer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value]"
           },
           "minReplicas": {
             "value": 0
@@ -1563,10 +1806,10 @@
             "value": 1
           },
           "env": {
-            "value": "[union(createArray(createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'secretRef', 'appinsights-connection-string'), createObject('name', 'AZURE_CLIENT_ID', 'value', reference('identity').outputs.clientId.value)), createArray(createObject('name', 'SQL_SERVER', 'secretRef', 'sql-server-fqdn'), createObject('name', 'SQL_DATABASE', 'secretRef', 'sql-database-name')))]"
+            "value": "[union(createArray(createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'secretRef', 'appinsights-connection-string'), createObject('name', 'AZURE_CLIENT_ID', 'value', reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.clientId.value)), createArray(createObject('name', 'SQL_SERVER', 'secretRef', 'sql-server-fqdn'), createObject('name', 'SQL_DATABASE', 'secretRef', 'sql-database-name')))]"
           },
           "secrets": {
-            "value": "[union(createArray(createObject('name', 'appinsights-connection-string', 'keyVaultUrl', format('{0}secrets/appinsights-connection-string', reference('keyVault').outputs.uri.value), 'identity', reference('identity').outputs.identityId.value)), createArray(createObject('name', 'sql-server-fqdn', 'keyVaultUrl', format('{0}secrets/sql-server-fqdn', reference('keyVault').outputs.uri.value), 'identity', reference('identity').outputs.identityId.value), createObject('name', 'sql-database-name', 'keyVaultUrl', format('{0}secrets/sql-database-name', reference('keyVault').outputs.uri.value), 'identity', reference('identity').outputs.identityId.value)))]"
+            "value": "[union(createArray(createObject('name', 'appinsights-connection-string', 'keyVaultUrl', format('{0}secrets/appinsights-connection-string', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value), 'identity', reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value)), createArray(createObject('name', 'sql-server-fqdn', 'keyVaultUrl', format('{0}secrets/sql-server-fqdn', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value), 'identity', reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value), createObject('name', 'sql-database-name', 'keyVaultUrl', format('{0}secrets/sql-database-name', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value), 'identity', reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value)))]"
           }
         },
         "template": {
@@ -1576,7 +1819,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "8668446535523957795"
+              "templateHash": "6770356244264197890"
             }
           },
           "parameters": {
@@ -1616,6 +1859,10 @@
             },
             "userAssignedIdentityId": {
               "type": "string"
+            },
+            "acrLoginServer": {
+              "type": "string",
+              "defaultValue": ""
             },
             "daprEnabled": {
               "type": "bool",
@@ -1661,7 +1908,7 @@
           "resources": [
             {
               "type": "Microsoft.App/containerApps",
-              "apiVersion": "2024-03-01",
+              "apiVersion": "2025-07-01",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -1679,12 +1926,7 @@
                   "ingress": "[if(equals(parameters('ingressType'), 'none'), null(), createObject('external', equals(parameters('ingressType'), 'external'), 'targetPort', parameters('containerPort'), 'transport', 'http', 'allowInsecure', false(), 'corsPolicy', if(equals(parameters('ingressType'), 'external'), createObject('allowedOrigins', createArray('*'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'), 'allowedHeaders', createArray('*')), null())))]",
                   "dapr": "[if(parameters('daprEnabled'), createObject('enabled', true(), 'appId', parameters('daprAppId'), 'appPort', parameters('daprAppPort'), 'appProtocol', 'http', 'enableApiLogging', false(), 'logLevel', 'info'), createObject('enabled', false()))]",
                   "secrets": "[parameters('secrets')]",
-                  "registries": [
-                    {
-                      "identity": "[parameters('userAssignedIdentityId')]",
-                      "server": "[split(parameters('containerImage'), '/')[0]]"
-                    }
-                  ]
+                  "registries": "[if(empty(parameters('acrLoginServer')), createArray(), createArray(createObject('identity', parameters('userAssignedIdentityId'), 'server', parameters('acrLoginServer'))))]"
                 },
                 "template": {
                   "containers": [
@@ -1718,23 +1960,25 @@
             },
             "fqdn": {
               "type": "string",
-              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').configuration.ingress.fqdn, '')]"
+              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').configuration.ingress.fqdn, '')]"
             },
             "latestRevisionName": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').latestRevisionName]"
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').latestRevisionName]"
             }
           }
         }
       },
       "dependsOn": [
-        "acaEnv",
-        "acr",
-        "identity",
-        "keyVault"
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvironment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'acr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'daprComponents')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity-rbac')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyvault')]"
       ]
     },
-    "orderService": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "order-service",
@@ -1754,11 +1998,9 @@
             "value": "[union(variables('tags'), createObject('azd-service-name', 'order-service'))]"
           },
           "environmentId": {
-            "value": "[reference('acaEnv').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvironment'), '2022-09-01').outputs.id.value]"
           },
-          "containerImage": {
-            "value": "[format('{0}/order-service:{1}', reference('acr').outputs.loginServer.value, parameters('orderServiceImageTag'))]"
-          },
+          "containerImage": "[if(empty(parameters('orderServiceImageTag')), createObject('value', variables('placeholderImage')), createObject('value', format('{0}/order-service:{1}', reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value, parameters('orderServiceImageTag'))))]",
           "workloadProfileName": {
             "value": "dedicated-d4"
           },
@@ -1772,7 +2014,10 @@
             "value": "order-service"
           },
           "userAssignedIdentityId": {
-            "value": "[reference('identity').outputs.identityId.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
+          },
+          "acrLoginServer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value]"
           },
           "cpuCores": {
             "value": "1.0"
@@ -1806,7 +2051,7 @@
               },
               {
                 "name": "AZURE_CLIENT_ID",
-                "value": "[reference('identity').outputs.clientId.value]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.clientId.value]"
               }
             ]
           },
@@ -1814,8 +2059,8 @@
             "value": [
               {
                 "name": "appinsights-connection-string",
-                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference('keyVault').outputs.uri.value)]",
-                "identity": "[reference('identity').outputs.identityId.value]"
+                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value)]",
+                "identity": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
               }
             ]
           }
@@ -1827,7 +2072,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "8668446535523957795"
+              "templateHash": "6770356244264197890"
             }
           },
           "parameters": {
@@ -1867,6 +2112,10 @@
             },
             "userAssignedIdentityId": {
               "type": "string"
+            },
+            "acrLoginServer": {
+              "type": "string",
+              "defaultValue": ""
             },
             "daprEnabled": {
               "type": "bool",
@@ -1912,7 +2161,7 @@
           "resources": [
             {
               "type": "Microsoft.App/containerApps",
-              "apiVersion": "2024-03-01",
+              "apiVersion": "2025-07-01",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -1930,12 +2179,7 @@
                   "ingress": "[if(equals(parameters('ingressType'), 'none'), null(), createObject('external', equals(parameters('ingressType'), 'external'), 'targetPort', parameters('containerPort'), 'transport', 'http', 'allowInsecure', false(), 'corsPolicy', if(equals(parameters('ingressType'), 'external'), createObject('allowedOrigins', createArray('*'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'), 'allowedHeaders', createArray('*')), null())))]",
                   "dapr": "[if(parameters('daprEnabled'), createObject('enabled', true(), 'appId', parameters('daprAppId'), 'appPort', parameters('daprAppPort'), 'appProtocol', 'http', 'enableApiLogging', false(), 'logLevel', 'info'), createObject('enabled', false()))]",
                   "secrets": "[parameters('secrets')]",
-                  "registries": [
-                    {
-                      "identity": "[parameters('userAssignedIdentityId')]",
-                      "server": "[split(parameters('containerImage'), '/')[0]]"
-                    }
-                  ]
+                  "registries": "[if(empty(parameters('acrLoginServer')), createArray(), createArray(createObject('identity', parameters('userAssignedIdentityId'), 'server', parameters('acrLoginServer'))))]"
                 },
                 "template": {
                   "containers": [
@@ -1969,23 +2213,25 @@
             },
             "fqdn": {
               "type": "string",
-              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').configuration.ingress.fqdn, '')]"
+              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').configuration.ingress.fqdn, '')]"
             },
             "latestRevisionName": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').latestRevisionName]"
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').latestRevisionName]"
             }
           }
         }
       },
       "dependsOn": [
-        "acaEnv",
-        "acr",
-        "identity",
-        "keyVault"
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvironment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'acr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'daprComponents')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity-rbac')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyvault')]"
       ]
     },
-    "accountingService": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "accounting-service",
@@ -2005,11 +2251,9 @@
             "value": "[union(variables('tags'), createObject('azd-service-name', 'accounting-service'))]"
           },
           "environmentId": {
-            "value": "[reference('acaEnv').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvironment'), '2022-09-01').outputs.id.value]"
           },
-          "containerImage": {
-            "value": "[format('{0}/accounting-service:{1}', reference('acr').outputs.loginServer.value, parameters('accountingServiceImageTag'))]"
-          },
+          "containerImage": "[if(empty(parameters('accountingServiceImageTag')), createObject('value', variables('placeholderImage')), createObject('value', format('{0}/accounting-service:{1}', reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value, parameters('accountingServiceImageTag'))))]",
           "workloadProfileName": {
             "value": "Consumption"
           },
@@ -2023,7 +2267,10 @@
             "value": "accounting-service"
           },
           "userAssignedIdentityId": {
-            "value": "[reference('identity').outputs.identityId.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
+          },
+          "acrLoginServer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value]"
           },
           "minReplicas": {
             "value": 0
@@ -2037,18 +2284,13 @@
                 "name": "servicebus-scale",
                 "custom": {
                   "type": "azure-servicebus",
+                  "identity": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]",
                   "metadata": {
-                    "namespace": "[reference('serviceBus').outputs.name.value]",
+                    "namespace": "[reference(resourceId('Microsoft.Resources/deployments', 'servicebus'), '2022-09-01').outputs.endpoint.value]",
                     "topicName": "orders",
                     "subscriptionName": "accounting-service",
                     "messageCount": "10"
-                  },
-                  "auth": [
-                    {
-                      "secretRef": "azure-client-id-placeholder",
-                      "triggerParameter": "clientId"
-                    }
-                  ]
+                  }
                 }
               },
               {
@@ -2062,10 +2304,10 @@
             ]
           },
           "env": {
-            "value": "[union(createArray(createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'secretRef', 'appinsights-connection-string'), createObject('name', 'AZURE_CLIENT_ID', 'value', reference('identity').outputs.clientId.value)), createArray(createObject('name', 'SQL_SERVER', 'secretRef', 'sql-server-fqdn'), createObject('name', 'SQL_DATABASE', 'secretRef', 'sql-database-name')))]"
+            "value": "[union(createArray(createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'secretRef', 'appinsights-connection-string'), createObject('name', 'AZURE_CLIENT_ID', 'value', reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.clientId.value)), createArray(createObject('name', 'SQL_SERVER', 'secretRef', 'sql-server-fqdn'), createObject('name', 'SQL_DATABASE', 'secretRef', 'sql-database-name')))]"
           },
           "secrets": {
-            "value": "[union(createArray(createObject('name', 'appinsights-connection-string', 'keyVaultUrl', format('{0}secrets/appinsights-connection-string', reference('keyVault').outputs.uri.value), 'identity', reference('identity').outputs.identityId.value)), createArray(createObject('name', 'sql-server-fqdn', 'keyVaultUrl', format('{0}secrets/sql-server-fqdn', reference('keyVault').outputs.uri.value), 'identity', reference('identity').outputs.identityId.value), createObject('name', 'sql-database-name', 'keyVaultUrl', format('{0}secrets/sql-database-name', reference('keyVault').outputs.uri.value), 'identity', reference('identity').outputs.identityId.value)))]"
+            "value": "[union(createArray(createObject('name', 'appinsights-connection-string', 'keyVaultUrl', format('{0}secrets/appinsights-connection-string', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value), 'identity', reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value)), createArray(createObject('name', 'sql-server-fqdn', 'keyVaultUrl', format('{0}secrets/sql-server-fqdn', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value), 'identity', reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value), createObject('name', 'sql-database-name', 'keyVaultUrl', format('{0}secrets/sql-database-name', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value), 'identity', reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value)))]"
           }
         },
         "template": {
@@ -2075,7 +2317,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "8668446535523957795"
+              "templateHash": "6770356244264197890"
             }
           },
           "parameters": {
@@ -2115,6 +2357,10 @@
             },
             "userAssignedIdentityId": {
               "type": "string"
+            },
+            "acrLoginServer": {
+              "type": "string",
+              "defaultValue": ""
             },
             "daprEnabled": {
               "type": "bool",
@@ -2160,7 +2406,7 @@
           "resources": [
             {
               "type": "Microsoft.App/containerApps",
-              "apiVersion": "2024-03-01",
+              "apiVersion": "2025-07-01",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -2178,12 +2424,7 @@
                   "ingress": "[if(equals(parameters('ingressType'), 'none'), null(), createObject('external', equals(parameters('ingressType'), 'external'), 'targetPort', parameters('containerPort'), 'transport', 'http', 'allowInsecure', false(), 'corsPolicy', if(equals(parameters('ingressType'), 'external'), createObject('allowedOrigins', createArray('*'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'), 'allowedHeaders', createArray('*')), null())))]",
                   "dapr": "[if(parameters('daprEnabled'), createObject('enabled', true(), 'appId', parameters('daprAppId'), 'appPort', parameters('daprAppPort'), 'appProtocol', 'http', 'enableApiLogging', false(), 'logLevel', 'info'), createObject('enabled', false()))]",
                   "secrets": "[parameters('secrets')]",
-                  "registries": [
-                    {
-                      "identity": "[parameters('userAssignedIdentityId')]",
-                      "server": "[split(parameters('containerImage'), '/')[0]]"
-                    }
-                  ]
+                  "registries": "[if(empty(parameters('acrLoginServer')), createArray(), createArray(createObject('identity', parameters('userAssignedIdentityId'), 'server', parameters('acrLoginServer'))))]"
                 },
                 "template": {
                   "containers": [
@@ -2217,24 +2458,26 @@
             },
             "fqdn": {
               "type": "string",
-              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').configuration.ingress.fqdn, '')]"
+              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').configuration.ingress.fqdn, '')]"
             },
             "latestRevisionName": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').latestRevisionName]"
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').latestRevisionName]"
             }
           }
         }
       },
       "dependsOn": [
-        "acaEnv",
-        "acr",
-        "identity",
-        "keyVault",
-        "serviceBus"
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvironment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'acr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'daprComponents')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity-rbac')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyvault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'servicebus')]"
       ]
     },
-    "loyaltyService": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "loyalty-service",
@@ -2254,11 +2497,9 @@
             "value": "[union(variables('tags'), createObject('azd-service-name', 'loyalty-service'))]"
           },
           "environmentId": {
-            "value": "[reference('acaEnv').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvironment'), '2022-09-01').outputs.id.value]"
           },
-          "containerImage": {
-            "value": "[format('{0}/loyalty-service:{1}', reference('acr').outputs.loginServer.value, parameters('loyaltyServiceImageTag'))]"
-          },
+          "containerImage": "[if(empty(parameters('loyaltyServiceImageTag')), createObject('value', variables('placeholderImage')), createObject('value', format('{0}/loyalty-service:{1}', reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value, parameters('loyaltyServiceImageTag'))))]",
           "workloadProfileName": {
             "value": "Consumption"
           },
@@ -2272,7 +2513,10 @@
             "value": "loyalty-service"
           },
           "userAssignedIdentityId": {
-            "value": "[reference('identity').outputs.identityId.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
+          },
+          "acrLoginServer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value]"
           },
           "minReplicas": {
             "value": 0
@@ -2286,8 +2530,9 @@
                 "name": "servicebus-scale",
                 "custom": {
                   "type": "azure-servicebus",
+                  "identity": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]",
                   "metadata": {
-                    "namespace": "[reference('serviceBus').outputs.name.value]",
+                    "namespace": "[reference(resourceId('Microsoft.Resources/deployments', 'servicebus'), '2022-09-01').outputs.endpoint.value]",
                     "topicName": "orders",
                     "subscriptionName": "loyalty-service",
                     "messageCount": "10"
@@ -2304,7 +2549,7 @@
               },
               {
                 "name": "AZURE_CLIENT_ID",
-                "value": "[reference('identity').outputs.clientId.value]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.clientId.value]"
               }
             ]
           },
@@ -2312,8 +2557,8 @@
             "value": [
               {
                 "name": "appinsights-connection-string",
-                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference('keyVault').outputs.uri.value)]",
-                "identity": "[reference('identity').outputs.identityId.value]"
+                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value)]",
+                "identity": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
               }
             ]
           }
@@ -2325,7 +2570,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "8668446535523957795"
+              "templateHash": "6770356244264197890"
             }
           },
           "parameters": {
@@ -2365,6 +2610,10 @@
             },
             "userAssignedIdentityId": {
               "type": "string"
+            },
+            "acrLoginServer": {
+              "type": "string",
+              "defaultValue": ""
             },
             "daprEnabled": {
               "type": "bool",
@@ -2410,7 +2659,7 @@
           "resources": [
             {
               "type": "Microsoft.App/containerApps",
-              "apiVersion": "2024-03-01",
+              "apiVersion": "2025-07-01",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -2428,12 +2677,7 @@
                   "ingress": "[if(equals(parameters('ingressType'), 'none'), null(), createObject('external', equals(parameters('ingressType'), 'external'), 'targetPort', parameters('containerPort'), 'transport', 'http', 'allowInsecure', false(), 'corsPolicy', if(equals(parameters('ingressType'), 'external'), createObject('allowedOrigins', createArray('*'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'), 'allowedHeaders', createArray('*')), null())))]",
                   "dapr": "[if(parameters('daprEnabled'), createObject('enabled', true(), 'appId', parameters('daprAppId'), 'appPort', parameters('daprAppPort'), 'appProtocol', 'http', 'enableApiLogging', false(), 'logLevel', 'info'), createObject('enabled', false()))]",
                   "secrets": "[parameters('secrets')]",
-                  "registries": [
-                    {
-                      "identity": "[parameters('userAssignedIdentityId')]",
-                      "server": "[split(parameters('containerImage'), '/')[0]]"
-                    }
-                  ]
+                  "registries": "[if(empty(parameters('acrLoginServer')), createArray(), createArray(createObject('identity', parameters('userAssignedIdentityId'), 'server', parameters('acrLoginServer'))))]"
                 },
                 "template": {
                   "containers": [
@@ -2467,24 +2711,26 @@
             },
             "fqdn": {
               "type": "string",
-              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').configuration.ingress.fqdn, '')]"
+              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').configuration.ingress.fqdn, '')]"
             },
             "latestRevisionName": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').latestRevisionName]"
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').latestRevisionName]"
             }
           }
         }
       },
       "dependsOn": [
-        "acaEnv",
-        "acr",
-        "identity",
-        "keyVault",
-        "serviceBus"
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvironment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'acr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'daprComponents')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity-rbac')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyvault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'servicebus')]"
       ]
     },
-    "makelineService": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "makeline-service",
@@ -2504,11 +2750,9 @@
             "value": "[union(variables('tags'), createObject('azd-service-name', 'makeline-service'))]"
           },
           "environmentId": {
-            "value": "[reference('acaEnv').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvironment'), '2022-09-01').outputs.id.value]"
           },
-          "containerImage": {
-            "value": "[format('{0}/makeline-service:{1}', reference('acr').outputs.loginServer.value, parameters('makelineServiceImageTag'))]"
-          },
+          "containerImage": "[if(empty(parameters('makelineServiceImageTag')), createObject('value', variables('placeholderImage')), createObject('value', format('{0}/makeline-service:{1}', reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value, parameters('makelineServiceImageTag'))))]",
           "workloadProfileName": {
             "value": "dedicated-d4"
           },
@@ -2522,7 +2766,10 @@
             "value": "makeline-service"
           },
           "userAssignedIdentityId": {
-            "value": "[reference('identity').outputs.identityId.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
+          },
+          "acrLoginServer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value]"
           },
           "cpuCores": {
             "value": "1.0"
@@ -2542,8 +2789,9 @@
                 "name": "servicebus-scale",
                 "custom": {
                   "type": "azure-servicebus",
+                  "identity": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]",
                   "metadata": {
-                    "namespace": "[reference('serviceBus').outputs.name.value]",
+                    "namespace": "[reference(resourceId('Microsoft.Resources/deployments', 'servicebus'), '2022-09-01').outputs.endpoint.value]",
                     "topicName": "orders",
                     "subscriptionName": "makeline-service",
                     "messageCount": "10"
@@ -2568,7 +2816,7 @@
               },
               {
                 "name": "AZURE_CLIENT_ID",
-                "value": "[reference('identity').outputs.clientId.value]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.clientId.value]"
               }
             ]
           },
@@ -2576,8 +2824,8 @@
             "value": [
               {
                 "name": "appinsights-connection-string",
-                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference('keyVault').outputs.uri.value)]",
-                "identity": "[reference('identity').outputs.identityId.value]"
+                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value)]",
+                "identity": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
               }
             ]
           }
@@ -2589,7 +2837,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "8668446535523957795"
+              "templateHash": "6770356244264197890"
             }
           },
           "parameters": {
@@ -2629,6 +2877,10 @@
             },
             "userAssignedIdentityId": {
               "type": "string"
+            },
+            "acrLoginServer": {
+              "type": "string",
+              "defaultValue": ""
             },
             "daprEnabled": {
               "type": "bool",
@@ -2674,7 +2926,7 @@
           "resources": [
             {
               "type": "Microsoft.App/containerApps",
-              "apiVersion": "2024-03-01",
+              "apiVersion": "2025-07-01",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -2692,12 +2944,7 @@
                   "ingress": "[if(equals(parameters('ingressType'), 'none'), null(), createObject('external', equals(parameters('ingressType'), 'external'), 'targetPort', parameters('containerPort'), 'transport', 'http', 'allowInsecure', false(), 'corsPolicy', if(equals(parameters('ingressType'), 'external'), createObject('allowedOrigins', createArray('*'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'), 'allowedHeaders', createArray('*')), null())))]",
                   "dapr": "[if(parameters('daprEnabled'), createObject('enabled', true(), 'appId', parameters('daprAppId'), 'appPort', parameters('daprAppPort'), 'appProtocol', 'http', 'enableApiLogging', false(), 'logLevel', 'info'), createObject('enabled', false()))]",
                   "secrets": "[parameters('secrets')]",
-                  "registries": [
-                    {
-                      "identity": "[parameters('userAssignedIdentityId')]",
-                      "server": "[split(parameters('containerImage'), '/')[0]]"
-                    }
-                  ]
+                  "registries": "[if(empty(parameters('acrLoginServer')), createArray(), createArray(createObject('identity', parameters('userAssignedIdentityId'), 'server', parameters('acrLoginServer'))))]"
                 },
                 "template": {
                   "containers": [
@@ -2731,24 +2978,26 @@
             },
             "fqdn": {
               "type": "string",
-              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').configuration.ingress.fqdn, '')]"
+              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').configuration.ingress.fqdn, '')]"
             },
             "latestRevisionName": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').latestRevisionName]"
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').latestRevisionName]"
             }
           }
         }
       },
       "dependsOn": [
-        "acaEnv",
-        "acr",
-        "identity",
-        "keyVault",
-        "serviceBus"
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvironment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'acr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'daprComponents')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity-rbac')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyvault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'servicebus')]"
       ]
     },
-    "receiptService": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "receipt-service",
@@ -2768,11 +3017,9 @@
             "value": "[union(variables('tags'), createObject('azd-service-name', 'receipt-service'))]"
           },
           "environmentId": {
-            "value": "[reference('acaEnv').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvironment'), '2022-09-01').outputs.id.value]"
           },
-          "containerImage": {
-            "value": "[format('{0}/receipt-service:{1}', reference('acr').outputs.loginServer.value, parameters('receiptServiceImageTag'))]"
-          },
+          "containerImage": "[if(empty(parameters('receiptServiceImageTag')), createObject('value', variables('placeholderImage')), createObject('value', format('{0}/receipt-service:{1}', reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value, parameters('receiptServiceImageTag'))))]",
           "workloadProfileName": {
             "value": "Consumption"
           },
@@ -2786,7 +3033,10 @@
             "value": "receipt-service"
           },
           "userAssignedIdentityId": {
-            "value": "[reference('identity').outputs.identityId.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
+          },
+          "acrLoginServer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value]"
           },
           "minReplicas": {
             "value": 0
@@ -2800,8 +3050,9 @@
                 "name": "servicebus-scale",
                 "custom": {
                   "type": "azure-servicebus",
+                  "identity": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]",
                   "metadata": {
-                    "namespace": "[reference('serviceBus').outputs.name.value]",
+                    "namespace": "[reference(resourceId('Microsoft.Resources/deployments', 'servicebus'), '2022-09-01').outputs.endpoint.value]",
                     "topicName": "orders",
                     "subscriptionName": "receipt-service",
                     "messageCount": "10"
@@ -2818,7 +3069,7 @@
               },
               {
                 "name": "AZURE_CLIENT_ID",
-                "value": "[reference('identity').outputs.clientId.value]"
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.clientId.value]"
               }
             ]
           },
@@ -2826,8 +3077,8 @@
             "value": [
               {
                 "name": "appinsights-connection-string",
-                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference('keyVault').outputs.uri.value)]",
-                "identity": "[reference('identity').outputs.identityId.value]"
+                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value)]",
+                "identity": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
               }
             ]
           }
@@ -2839,7 +3090,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "8668446535523957795"
+              "templateHash": "6770356244264197890"
             }
           },
           "parameters": {
@@ -2879,6 +3130,10 @@
             },
             "userAssignedIdentityId": {
               "type": "string"
+            },
+            "acrLoginServer": {
+              "type": "string",
+              "defaultValue": ""
             },
             "daprEnabled": {
               "type": "bool",
@@ -2924,7 +3179,7 @@
           "resources": [
             {
               "type": "Microsoft.App/containerApps",
-              "apiVersion": "2024-03-01",
+              "apiVersion": "2025-07-01",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -2942,12 +3197,7 @@
                   "ingress": "[if(equals(parameters('ingressType'), 'none'), null(), createObject('external', equals(parameters('ingressType'), 'external'), 'targetPort', parameters('containerPort'), 'transport', 'http', 'allowInsecure', false(), 'corsPolicy', if(equals(parameters('ingressType'), 'external'), createObject('allowedOrigins', createArray('*'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'), 'allowedHeaders', createArray('*')), null())))]",
                   "dapr": "[if(parameters('daprEnabled'), createObject('enabled', true(), 'appId', parameters('daprAppId'), 'appPort', parameters('daprAppPort'), 'appProtocol', 'http', 'enableApiLogging', false(), 'logLevel', 'info'), createObject('enabled', false()))]",
                   "secrets": "[parameters('secrets')]",
-                  "registries": [
-                    {
-                      "identity": "[parameters('userAssignedIdentityId')]",
-                      "server": "[split(parameters('containerImage'), '/')[0]]"
-                    }
-                  ]
+                  "registries": "[if(empty(parameters('acrLoginServer')), createArray(), createArray(createObject('identity', parameters('userAssignedIdentityId'), 'server', parameters('acrLoginServer'))))]"
                 },
                 "template": {
                   "containers": [
@@ -2981,24 +3231,26 @@
             },
             "fqdn": {
               "type": "string",
-              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').configuration.ingress.fqdn, '')]"
+              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').configuration.ingress.fqdn, '')]"
             },
             "latestRevisionName": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').latestRevisionName]"
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').latestRevisionName]"
             }
           }
         }
       },
       "dependsOn": [
-        "acaEnv",
-        "acr",
-        "identity",
-        "keyVault",
-        "serviceBus"
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvironment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'acr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'daprComponents')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity-rbac')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyvault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'servicebus')]"
       ]
     },
-    "ui": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "ui",
@@ -3018,11 +3270,9 @@
             "value": "[union(variables('tags'), createObject('azd-service-name', 'ui'))]"
           },
           "environmentId": {
-            "value": "[reference('acaEnv').outputs.id.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvironment'), '2022-09-01').outputs.id.value]"
           },
-          "containerImage": {
-            "value": "[format('{0}/ui:{1}', reference('acr').outputs.loginServer.value, parameters('uiImageTag'))]"
-          },
+          "containerImage": "[if(empty(parameters('uiImageTag')), createObject('value', variables('placeholderImage')), createObject('value', format('{0}/ui:{1}', reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value, parameters('uiImageTag'))))]",
           "containerPort": {
             "value": 3000
           },
@@ -3042,7 +3292,10 @@
             "value": 3000
           },
           "userAssignedIdentityId": {
-            "value": "[reference('identity').outputs.identityId.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
+          },
+          "acrLoginServer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value]"
           },
           "minReplicas": {
             "value": 1
@@ -3063,14 +3316,14 @@
             ]
           },
           "env": {
-            "value": "[union(createArray(createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'secretRef', 'appinsights-connection-string'), createObject('name', 'AZURE_CLIENT_ID', 'value', reference('identity').outputs.clientId.value)), createArray(createObject('name', 'DAPR_HTTP_PORT', 'value', '3500'), createObject('name', 'ORDER_SERVICE_APP_ID', 'value', 'order-service'), createObject('name', 'ACCOUNTING_SERVICE_APP_ID', 'value', 'accounting-service'), createObject('name', 'MAKELINE_SERVICE_APP_ID', 'value', 'makeline-service')))]"
+            "value": "[union(createArray(createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'secretRef', 'appinsights-connection-string'), createObject('name', 'AZURE_CLIENT_ID', 'value', reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.clientId.value)), createArray(createObject('name', 'DAPR_HTTP_PORT', 'value', '3500'), createObject('name', 'ORDER_SERVICE_APP_ID', 'value', 'order-service'), createObject('name', 'ACCOUNTING_SERVICE_APP_ID', 'value', 'accounting-service'), createObject('name', 'MAKELINE_SERVICE_APP_ID', 'value', 'makeline-service')))]"
           },
           "secrets": {
             "value": [
               {
                 "name": "appinsights-connection-string",
-                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference('keyVault').outputs.uri.value)]",
-                "identity": "[reference('identity').outputs.identityId.value]"
+                "keyVaultUrl": "[format('{0}secrets/appinsights-connection-string', reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value)]",
+                "identity": "[reference(resourceId('Microsoft.Resources/deployments', 'identity'), '2022-09-01').outputs.identityId.value]"
               }
             ]
           }
@@ -3082,7 +3335,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.35.1.17967",
-              "templateHash": "8668446535523957795"
+              "templateHash": "6770356244264197890"
             }
           },
           "parameters": {
@@ -3122,6 +3375,10 @@
             },
             "userAssignedIdentityId": {
               "type": "string"
+            },
+            "acrLoginServer": {
+              "type": "string",
+              "defaultValue": ""
             },
             "daprEnabled": {
               "type": "bool",
@@ -3167,7 +3424,7 @@
           "resources": [
             {
               "type": "Microsoft.App/containerApps",
-              "apiVersion": "2024-03-01",
+              "apiVersion": "2025-07-01",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -3185,12 +3442,7 @@
                   "ingress": "[if(equals(parameters('ingressType'), 'none'), null(), createObject('external', equals(parameters('ingressType'), 'external'), 'targetPort', parameters('containerPort'), 'transport', 'http', 'allowInsecure', false(), 'corsPolicy', if(equals(parameters('ingressType'), 'external'), createObject('allowedOrigins', createArray('*'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'), 'allowedHeaders', createArray('*')), null())))]",
                   "dapr": "[if(parameters('daprEnabled'), createObject('enabled', true(), 'appId', parameters('daprAppId'), 'appPort', parameters('daprAppPort'), 'appProtocol', 'http', 'enableApiLogging', false(), 'logLevel', 'info'), createObject('enabled', false()))]",
                   "secrets": "[parameters('secrets')]",
-                  "registries": [
-                    {
-                      "identity": "[parameters('userAssignedIdentityId')]",
-                      "server": "[split(parameters('containerImage'), '/')[0]]"
-                    }
-                  ]
+                  "registries": "[if(empty(parameters('acrLoginServer')), createArray(), createArray(createObject('identity', parameters('userAssignedIdentityId'), 'server', parameters('acrLoginServer'))))]"
                 },
                 "template": {
                   "containers": [
@@ -3224,55 +3476,57 @@
             },
             "fqdn": {
               "type": "string",
-              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').configuration.ingress.fqdn, '')]"
+              "value": "[if(not(equals(parameters('ingressType'), 'none')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').configuration.ingress.fqdn, '')]"
             },
             "latestRevisionName": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').latestRevisionName]"
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2025-07-01').latestRevisionName]"
             }
           }
         }
       },
       "dependsOn": [
-        "acaEnv",
-        "acr",
-        "identity",
-        "keyVault"
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvironment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'acr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'daprComponents')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'identity-rbac')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyvault')]"
       ]
     }
-  },
+  ],
   "outputs": {
     "AZURE_CONTAINER_REGISTRY_ENDPOINT": {
       "type": "string",
-      "value": "[reference('acr').outputs.loginServer.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.loginServer.value]"
     },
     "AZURE_CONTAINER_REGISTRY_NAME": {
       "type": "string",
-      "value": "[reference('acr').outputs.name.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acr'), '2022-09-01').outputs.name.value]"
     },
     "AZURE_KEY_VAULT_NAME": {
       "type": "string",
-      "value": "[reference('keyVault').outputs.name.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.name.value]"
     },
     "AZURE_KEY_VAULT_URI": {
       "type": "string",
-      "value": "[reference('keyVault').outputs.uri.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.uri.value]"
     },
     "APP_INSIGHTS_NAME": {
       "type": "string",
-      "value": "[reference('monitoring').outputs.appInsightsName.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'monitoring'), '2022-09-01').outputs.appInsightsName.value]"
     },
     "UI_URL": {
       "type": "string",
-      "value": "[format('https://{0}', reference('ui').outputs.fqdn.value)]"
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Resources/deployments', 'ui'), '2022-09-01').outputs.fqdn.value)]"
     },
     "ACA_ENVIRONMENT_NAME": {
       "type": "string",
-      "value": "[reference('acaEnv').outputs.name.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvironment'), '2022-09-01').outputs.name.value]"
     },
     "SERVICE_BUS_NAMESPACE": {
       "type": "string",
-      "value": "[reference('serviceBus').outputs.name.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'servicebus'), '2022-09-01').outputs.name.value]"
     }
   }
 }

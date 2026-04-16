@@ -114,6 +114,8 @@ module redis 'modules/redis.bicep' = {
     name: names.redis
     location: location
     tags: tags
+    managedIdentityPrincipalId: identity.outputs.principalId
+    managedIdentityAlias: names.identity
   }
 }
 
@@ -137,7 +139,6 @@ module keyVault 'modules/keyvault.bicep' = {
     secrets: [
       { name: 'appinsights-connection-string', value: monitoring.outputs.appInsightsConnectionString }
       { name: 'redis-host', value: redis.outputs.hostName }
-      { name: 'redis-password', value: redis.outputs.primaryKey }
       { name: 'sql-server-fqdn', value: sql.outputs.serverFqdn }
       { name: 'sql-database-name', value: sql.outputs.databaseName }
       { name: 'servicebus-namespace', value: serviceBus.outputs.endpoint }
@@ -182,7 +183,6 @@ module daprComponents 'modules/daprComponents.bicep' = {
     environmentName: acaEnv.outputs.name
     serviceBusNamespace: serviceBus.outputs.name
     redisHost: redis.outputs.hostName
-    redisPassword: redis.outputs.primaryKey
     cosmosEndpoint: cosmos.outputs.endpoint
     cosmosDatabase: cosmos.outputs.databaseName
     cosmosContainer: cosmos.outputs.containerName

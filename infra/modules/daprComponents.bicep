@@ -12,10 +12,6 @@ param serviceBusNamespace string
 @description('Redis cache hostname')
 param redisHost string
 
-@description('Redis primary access key')
-@secure()
-param redisPassword string
-
 @description('Cosmos DB account endpoint URL')
 param cosmosEndpoint string
 
@@ -56,20 +52,18 @@ resource pubsubServiceBus 'Microsoft.App/managedEnvironments/daprComponents@2024
   }
 }
 
-// ── Redis state store ─────────────────────────────────────────────────────────
+// ── Redis state store (Entra ID / managed identity auth) ──────────────────────
 resource statestoreRedis 'Microsoft.App/managedEnvironments/daprComponents@2024-03-01' = {
   name: 'statestore-redis'
   parent: acaEnvironment
   properties: {
     componentType: 'state.redis'
     version: 'v1'
-    secrets: [
-      { name: 'redis-password', value: redisPassword }
-    ]
     metadata: [
       { name: 'redisHost', value: '${redisHost}:6380' }
-      { name: 'redisPassword', secretRef: 'redis-password' }
       { name: 'enableTLS', value: 'true' }
+      { name: 'useEntraID', value: 'true' }
+      { name: 'azureClientId', value: managedIdentityClientId }
     ]
     scopes: [
       'makeline-service'
